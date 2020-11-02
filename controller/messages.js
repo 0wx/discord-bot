@@ -2,6 +2,7 @@ const meta = require('metafetch');
 const isURL = require('is-url');
 const translate = require('../lib/translate');
 const translationChannel = process.env.NODE_ENV === "production" ? "701767679102550016" : "771805055418499125";
+const fs = require('fs');
 
 const avatarUrl = (id, avatar) => avatar ? `https://cdn.discordapp.com/avatars/${id}/${avatar}` : "https://cdn.discordapp.com/embed/avatars/1.png";
 const filterList = [
@@ -12,6 +13,9 @@ const filterList = [
     'https?:\/\/keep.directory.+',
     'https?:\/\/keep.directory',
     'https?:\/\/medium\.com\/cross-chain\/.+',
+    'https?:\/\/(.+)?facebook.com.+',
+    'https?:\/\/(.+)?twitter.com.+',
+    'https?:\/\/(.+)?telegram.com.+',
 ];
 
 
@@ -47,11 +51,7 @@ module.exports = async (msg) => {
         .map(decodeURI)
         .map(encodeURI);
 
-    // read meta tag from the url
-    const promiseData = content.map(x => meta.fetch(x));
-    let embeds = await Promise.all(promiseData);
-
-    // details to push alongside with parsed url
+    // define details
     let details = {
         chat_id: msg.id,
         id,
@@ -60,6 +60,22 @@ module.exports = async (msg) => {
         avatarUrl: avatarUrl(id, avatar),
         timestamp: createdTimestamp,
     };
+    // read meta tag from the url
+    let embeds = [], err = [];
+    for (let item of content) {
+        try {
+            let response = await meta.fetch(item);
+            embeds.push(response);
+        } catch (e) {
+            console.log(e);
+            err.push(item);
+        }
+    };
+
+    if(err.length) fs.appendFileSync('./toCheck.txt', `${new Date()}\n${JSON.stringify({...details, embeds: err })}\n`);
+
+    // details to push alongside with parsed url
+
 
     embeds = embeds
         // removing error url
