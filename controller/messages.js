@@ -1,5 +1,6 @@
 const meta = require('metafetch');
 const isURL = require('is-url');
+const axios = require('axios');
 const translate = require('../lib/translate');
 const translationChannel = process.env.NODE_ENV === "production" ? "701767679102550016" : "771805055418499125";
 const fs = require('fs');
@@ -29,6 +30,12 @@ module.exports = async (msg) => {
     const noQuoted = (text) => text[0] != '>';
     const splitSpace = (text) => text.split(' ');
     const filterUrl = (url) => filterList.every(filter => !url.match(new RegExp(filter, 'i')))
+    
+    // Update the database
+    axios
+        .get('https://keep.directory/api/update')
+        .then(x => console.log(x.data.message))
+        .catch(e => console.log(e));
 
     // parse message
     content = content
